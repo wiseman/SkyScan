@@ -25,10 +25,7 @@ import utils
 import logging
 import coloredlogs
 
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': True,
-})
+
 
 
 ID = str(random.randint(1,100001))
