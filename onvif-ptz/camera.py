@@ -180,7 +180,7 @@ def moveCamera(ip, username, password):
                 pan = pan / 180
 
                 tilt = cameraTilt / 90
-                camera.absolute_move(pan, tilt, cameraZoom, cameraMoveSpeed)
+                camera.absolute_move(pan, tilt, cameraZoom)
                 #logging.info("Moving to Pan: {} Tilt: {}".format(cameraPan, cameraTilt))
                 moveTimeout = moveTimeout + timedelta(milliseconds=movePeriod)
                 if moveTimeout <= datetime.now():
