@@ -157,8 +157,8 @@ def calculateCameraPosition():
 
 def moveCamera(ip, username, password):
 
-    movePeriod = 250  # milliseconds
-    capturePeriod = 2000 # milliseconds
+    movePeriod = 1000  # milliseconds
+    capturePeriod = 1000 # milliseconds
     moveTimeout = datetime.now()
     captureTimeout = datetime.now()
     camera = onvif_control.CameraControl(ip, username, password)
