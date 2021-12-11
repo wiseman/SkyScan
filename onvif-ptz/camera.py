@@ -32,6 +32,7 @@ ID = str(random.randint(1,100001))
 args = None
 camera = None
 cameraBearingCorrection = 0
+cameraElevationCorrection = 0
 cameraConfig = None
 cameraZoom = None
 cameraMoveSpeed = None
@@ -58,6 +59,11 @@ currentPlane=None
 def calculate_bearing_correction(b):
     return (b + cameraBearingCorrection) % 360
 
+def calculate_elevation_correction(e):
+    corrected = e + cameraElevationCorrection
+    if corrected > 90:
+        corrected = 90
+    return corrected
          
 def get_jpeg_request():  # 5.2.4.1
     """
@@ -149,7 +155,7 @@ def calculateCameraPosition():
     elevation = utils.elevation(distance2d, cameraAltitude=camera_altitude, airplaneAltitude=alt)
     (angularVelocityHorizontal, angularVelocityVertical) = utils.angular_velocity(currentPlane,camera_latitude, camera_longitude, camera_altitude) 
     #logging.info("Angular Velocity - Horizontal: {} Vertical: {}".format(angularVelocityHorizontal, angularVelocityVertical))
-    cameraTilt = elevation
+    cameraTilt = calculate_elevation_correction(elevation)
     cameraPan = utils.cameraPanFromCoordinate(cameraPosition=[camera_latitude, camera_longitude], airplanePosition=[lat, lon])
     cameraPan = calculate_bearing_correction(cameraPan)
 
@@ -180,7 +186,12 @@ def moveCamera(ip, username, password):
                 pan = pan / 180
 
                 tilt = cameraTilt / 90
-                camera.absolute_move(pan, tilt, cameraZoom)
+
+                try:
+                    camera.absolute_move(pan, tilt, cameraZoom)
+                except:
+                    logging.info(" 🚨 Exception with Moving")   
+                  
                 #logging.info("Moving to Pan: {} Tilt: {}".format(cameraPan, cameraTilt))
                 moveTimeout = moveTimeout + timedelta(milliseconds=movePeriod)
                 if moveTimeout <= datetime.now():
@@ -208,6 +219,7 @@ def update_config(config):
     global camera_lead
     global camera_altitude
     global cameraBearingCorrection
+    global cameraElevationCorrection
 
     if "cameraZoom" in config:
         cameraZoom = float(config["cameraZoom"])
@@ -226,7 +238,10 @@ def update_config(config):
         logging.info("Setting Camera Altitude to: {}".format(camera_altitude))
     if "cameraBearingCorrection" in config:
         cameraBearingCorrection = float(config["cameraBearingCorrection"])
-        logging.info("Setting Camera Bearing Correction to: {}".format(cameraBearingCorrection))        
+        logging.info("Setting Camera Bearing Correction to: {}".format(cameraBearingCorrection))
+    if "cameraElevationCorrection" in config:
+        cameraElevationCorrection = float(config["cameraElevationCorrection"])
+        logging.info("Setting Camera Elevation Correction to: {}".format(cameraElevationCorrection))          
 
 #############################################
 ##         MQTT Callback Function          ##
