@@ -102,6 +102,9 @@ def get_jpeg_request():  # 5.2.4.1
     except requests.exceptions.Timeout:
         logging.info("🚨 Images capture request timed out 🚨  ")
         return
+    except:
+        logging.info("🚨 Images capture request timed out 🚨  ")
+        return        
 
     disk_time = datetime.now()
     if resp.status_code == 200:
@@ -307,6 +310,8 @@ def main():
     global camera
     global cameraDelay
     global cameraMoveSpeed
+    global cameraBearingCorrection
+    global cameraElevationCorrection
     global cameraZoom
     global cameraPan
     global camera_altitude
@@ -333,7 +338,8 @@ def main():
     parser.add_argument('-d', '--camera-delay', type=float, help="How many seconds after issuing a Pan/Tilt command should a picture be taken", default=0)
     parser.add_argument('-z', '--camera-zoom', type=float, help="The zoom setting for the camera (0.0 - 1.0)", default=0.3)
     parser.add_argument('-v', '--verbose',  action="store_true", help="Verbose output")
-
+    parser.add_argument('-b', '--camera-bearing-correction', type=float, help="The amount to correct the bearing by", default=0)
+    parser.add_argument('-e', '--camera-elevation-correction', type=float, help="The amount to correct camera elevation by", default=0)
     args = parser.parse_args()
 
     level = logging.DEBUG if args.verbose else logging.INFO
@@ -356,6 +362,8 @@ def main():
     logging.info("---[ Starting %s ]---------------------------------------------" % sys.argv[0])
     cameraDelay = args.camera_delay
     cameraMoveSpeed = args.camera_move_speed
+    cameraElevationCorrection = args.camera_elevation_correction
+    cameraBearingCorrection = args.camera_bearing_correction
     cameraZoom = args.camera_zoom
     camera_longitude = args.lon
     camera_latitude = args.lat
