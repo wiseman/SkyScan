@@ -27,7 +27,7 @@ import logging
 import coloredlogs
 
 
-
+logging.getLogger("azure.storage.common.storageclient").setLevel(logging.WARNING)
 
 ID = str(random.randint(1,100001))
 args = None
@@ -228,7 +228,7 @@ def moveCamera(ip, username, password):
 def update_track_id(icao24):
     global trackId
     now = datetime.now()
-    timestamp = datetime.timestamp(now)
+    timestamp = int(datetime.timestamp(now))
     trackId = "{}-{}".format(icao24,timestamp)
 
 def update_config(config):
