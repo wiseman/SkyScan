@@ -119,7 +119,7 @@ def get_jpeg_request():  # 5.2.4.1
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise  # This was not a "directory exist" error..
-        filename = "{}_{}_{}_{}_{}_{}.jpg".format(captureDir, currentPlane["icao24"], int(bearing), int(elevation), int(distance3d), datetime.now().strftime('%Y-%m-%d-%H-%M-%S'),trackId)
+        filename = "{}_{}_{}_{}_{}_{}.jpg".format(currentPlane["icao24"], int(bearing), int(elevation), int(distance3d), datetime.now().strftime('%Y-%m-%d-%H-%M-%S'),trackId)
         filepath = "{}/{}".format(captureDir,filename)
         # Original
         with open(filepath, 'wb') as var:
