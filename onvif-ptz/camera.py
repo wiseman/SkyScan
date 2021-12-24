@@ -20,6 +20,7 @@ import paho.mqtt.client as mqtt
 from json.decoder import JSONDecodeError
 from sensecam_control import onvif_control
 import utils
+from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, __version__
 
 
 import logging
@@ -39,6 +40,8 @@ cameraMoveSpeed = None
 cameraDelay = None
 cameraLead = 0 
 active = False
+blob_service_client = None 
+
 
 object_topic = None
 flight_topic = None
@@ -55,6 +58,8 @@ angularVelocityVertical = 0      # in meters
 planeTrack = 0      # This is the direction that the plane is moving in
 
 currentPlane=None
+trackId = None
+
 
 def calculate_bearing_correction(b):
     return (b + cameraBearingCorrection) % 360
@@ -114,10 +119,10 @@ def get_jpeg_request():  # 5.2.4.1
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise  # This was not a "directory exist" error..
-        filename = "{}/{}_{}_{}_{}_{}.jpg".format(captureDir, currentPlane["icao24"], int(bearing), int(elevation), int(distance3d), datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-
+        filename = "{}_{}_{}_{}_{}_{}.jpg".format(captureDir, currentPlane["icao24"], int(bearing), int(elevation), int(distance3d), datetime.now().strftime('%Y-%m-%d-%H-%M-%S'),trackId)
+        filepath = "{}/{}".format(captureDir,filename)
         # Original
-        with open(filename, 'wb') as var:
+        with open(filepath, 'wb') as var:
             var.write(resp.content)
 
         #Non-Blocking
@@ -139,6 +144,12 @@ def get_jpeg_request():  # 5.2.4.1
     if disk_time_diff.total_seconds() > 0.1:
         logging.info("🚨  Image Capture Timeout  🚨  Net time: {}  \tDisk time: {}".format(net_time_diff, disk_time_diff))
 
+    # Create a blob client using the local file name as the name for the blob
+    blob_client = blob_service_client.get_blob_client(container="inbox", blob=filename)
+
+    # Upload the created file
+    with open(filepath, "rb") as data:
+        blob_client.upload_blob(data)
 
 def calculateCameraPosition():
     global cameraPan
@@ -214,6 +225,12 @@ def moveCamera(ip, username, password):
         else:
             time.sleep(1)
 
+def update_track_id(icao24):
+    global trackId
+    now = datetime.now()
+    timestamp = datetime.timestamp(now)
+    trackId = "{}-{}".format(icao24,timestamp)
+
 def update_config(config):
     global cameraZoom
     global cameraMoveSpeed
@@ -283,9 +300,14 @@ def on_message(client, userdata, message):
         if "icao24" in update:
             if active is False:
                 logging.info("{}\t[Starting Capture]".format(update["icao24"]))
+            else:
+                if currentPlane["icao24"] != update["icao24"]:
+                    update_track_id(update["icao24"])
             active = True
             logging.info("{}\t[IMAGE]\tBearing: {} \tElv: {} \tDist: {}".format(update["icao24"],int(update["bearing"]),int(update["elevation"]),int(update["distance"])))
             currentPlane = update
+            
+
         else:
             if active is True:
                 logging.info("{}\t[Stopping Capture]".format(currentPlane["icao24"]))
@@ -321,6 +343,7 @@ def main():
     global cameraConfig
     global flight_topic
     global object_topic
+    global blob_service_client
 
     parser = argparse.ArgumentParser(description='An MQTT based camera controller')
     parser.add_argument('--lat', type=float, help="Latitude of camera")
@@ -340,6 +363,7 @@ def main():
     parser.add_argument('-v', '--verbose',  action="store_true", help="Verbose output")
     parser.add_argument('-b', '--camera-bearing-correction', type=float, help="The amount to correct the bearing by", default=0)
     parser.add_argument('-e', '--camera-elevation-correction', type=float, help="The amount to correct camera elevation by", default=0)
+    parser.add_argument("--conn", help="Azure Blob Storage connection string")
     args = parser.parse_args()
 
     level = logging.DEBUG if args.verbose else logging.INFO
@@ -370,6 +394,9 @@ def main():
     camera_altitude = args.alt # Altitude is in METERS
     camera_lead = args.camera_lead
     
+    # Create the BlobServiceClient object which will be used to create a container client
+    blob_service_client = BlobServiceClient.from_connection_string(args.conn)
+
     threading.Thread(target=moveCamera, args=[args.axis_ip, args.axis_username, args.axis_password],daemon=True).start()
         # Sleep for a bit so we're not hammering the HAT with updates
     time.sleep(0.005)
