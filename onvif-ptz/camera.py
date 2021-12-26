@@ -20,14 +20,13 @@ import paho.mqtt.client as mqtt
 from json.decoder import JSONDecodeError
 from sensecam_control import onvif_control
 import utils
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, __version__
-
-
 import logging
 import coloredlogs
 
-
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
 logging.getLogger("azure.storage.common.storageclient").setLevel(logging.WARNING)
+
+from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, __version__
 
 ID = str(random.randint(1,100001))
 args = None
@@ -125,6 +124,14 @@ def get_jpeg_request():  # 5.2.4.1
         with open(filepath, 'wb') as var:
             var.write(resp.content)
 
+
+        # Create a blob client using the local file name as the name for the blob
+        blob_client = blob_service_client.get_blob_client(container="inbox", blob=filename)
+
+        # Upload the created file
+        with open(filepath, "rb") as data:
+            blob_client.upload_blob(data)
+
         #Non-Blocking
         #fd = os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_NONBLOCK)
         #os.write(fd, resp.content)
@@ -144,12 +151,7 @@ def get_jpeg_request():  # 5.2.4.1
     if disk_time_diff.total_seconds() > 0.1:
         logging.info("🚨  Image Capture Timeout  🚨  Net time: {}  \tDisk time: {}".format(net_time_diff, disk_time_diff))
 
-    # Create a blob client using the local file name as the name for the blob
-    blob_client = blob_service_client.get_blob_client(container="inbox", blob=filename)
 
-    # Upload the created file
-    with open(filepath, "rb") as data:
-        blob_client.upload_blob(data)
 
 def calculateCameraPosition():
     global cameraPan
