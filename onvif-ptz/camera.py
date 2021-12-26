@@ -232,6 +232,7 @@ def update_track_id(icao24):
     now = datetime.now()
     timestamp = int(datetime.timestamp(now))
     trackId = "{}-{}".format(icao24,timestamp)
+    logging.info("Setting Track ID to: {}".format(trackId))
 
 def update_config(config):
     global cameraZoom
