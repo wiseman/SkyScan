@@ -301,12 +301,13 @@ def on_message(client, userdata, message):
         object_timeout = time.mktime(time.gmtime()) + 5
     elif message.topic == flight_topic:
         if "icao24" in update:
+            if (currentPlane == None) or (currentPlane["icao24"] != update["icao24"]):
+                update_track_id(update["icao24"])
             if active is False:
                 logging.info("{}\t[Starting Capture]".format(update["icao24"]))
             else:
                 logging.info("Current ICAO24: {} Updated: {}".format(currentPlane["icao24"], update["icao24"]))
-                if (update["icao24"] == None) or (currentPlane == None) or (currentPlane["icao24"] != update["icao24"]):
-                    update_track_id(update["icao24"])
+
             active = True
             logging.info("{}\t[IMAGE]\tBearing: {} \tElv: {} \tDist: {}".format(update["icao24"],int(update["bearing"]),int(update["elevation"]),int(update["distance"])))
             currentPlane = update
