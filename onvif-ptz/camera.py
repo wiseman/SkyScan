@@ -129,8 +129,12 @@ def get_jpeg_request():  # 5.2.4.1
         blob_client = blob_service_client.get_blob_client(container="inbox", blob=filename)
 
         # Upload the created file
-        with open(filepath, "rb") as data:
-            blob_client.upload_blob(data)
+        try:
+            with open(filepath, "rb") as data:
+                blob_client.upload_blob(data)
+        except e:
+            logging.error(" 🚨 Exception while Uploading")
+            logging.error(e)
 
         #Non-Blocking
         #fd = os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_NONBLOCK)
