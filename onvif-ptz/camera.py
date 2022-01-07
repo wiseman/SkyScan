@@ -131,10 +131,10 @@ def get_jpeg_request():  # 5.2.4.1
         # Upload the created file
         try:
             with open(filepath, "rb") as data:
-                blob_client.upload_blob(data)
-        except e:
+                blob_client.upload_blob(data,overwrite=True)
+        except:
             logging.error(" 🚨 Exception while Uploading")
-            logging.error(e)
+
 
         #Non-Blocking
         #fd = os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_NONBLOCK)
