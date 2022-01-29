@@ -109,7 +109,9 @@ def get_jpeg_request():  # 5.2.4.1
     except:
         logging.info("🚨 Images capture request timed out 🚨  ")
         return        
-
+    callsign = currentPlane["callsign"]
+    if len(callsign) <= 0:
+        callsign=""
     disk_time = datetime.now()
     if resp.status_code == 200:
         captureDir = "capture/{}".format(currentPlane["type"])
@@ -118,7 +120,7 @@ def get_jpeg_request():  # 5.2.4.1
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise  # This was not a "directory exist" error..
-        filename = "{}_{}_{}_{}_{}_{}.jpg".format(currentPlane["icao24"], int(bearing), int(elevation), int(distance3d), datetime.now().strftime('%Y-%m-%d-%H-%M-%S'),trackId)
+        filename = "{}_{}_{}_{}_{}_{}_{}.jpg".format(currentPlane["icao24"], int(bearing), int(elevation), int(distance3d), datetime.now().strftime('%Y-%m-%d-%H-%M-%S'),trackId,callsign)
         filepath = "{}/{}".format(captureDir,filename)
         # Original
         with open(filepath, 'wb') as var:
@@ -312,10 +314,10 @@ def on_message(client, userdata, message):
             else:
                 logging.info("Current ICAO24: {} Updated: {}".format(currentPlane["icao24"], update["icao24"]))
 
-            active = True
+
             logging.info("{}\t[IMAGE]\tBearing: {} \tElv: {} \tDist: {}".format(update["icao24"],int(update["bearing"]),int(update["elevation"]),int(update["distance"])))
             currentPlane = update
-            
+            active = True
 
         else:
             if active is True:
