@@ -298,7 +298,7 @@ class Observation(object):
         if self.__callsign is None:
             callsign = "None"
         else:
-            callsign = "\"%s\"" % self.__callsign
+            callsign = "%s" % self.__callsign
 
         planeDict = {"verticalRate": self.__verticalRate, "time": time.time(), "lat": self.__lat, "lon": self.__lon,  "altitude": self.__altitude, "groundSpeed": self.__groundSpeed, "icao24": self.__icao24, "registration": self.__registration, "track": self.__track, "operator": self.__operator,   "loggedDate": self.__loggedDate, "type": self.__type, "latLonTime": self.__latLonTime, "altitudeTime": self.__altitudeTime, "manufacturer": self.__manufacturer, "model": self.__model, "callsign": callsign, "bearing": self.__bearing, "distance": self.__distance, "elevation": self.__elevation}
         jsonString = json.dumps(planeDict, indent=4, sort_keys=True, default=str)
