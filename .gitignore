@@ -14,3 +14,5 @@ ml-model/*.json
 ml-model/notebooks/.Trash-0/*
 ml-model/notebooks/*.json
 
+capture
+data
