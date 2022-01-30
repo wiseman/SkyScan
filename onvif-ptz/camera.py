@@ -104,10 +104,10 @@ def get_jpeg_request():  # 5.2.4.1
     try:
         resp = requests.get(url, auth=HTTPDigestAuth(args.axis_username, args.axis_password), params=payload, timeout=0.5)
     except requests.exceptions.Timeout:
-        logging.info("🚨 Images capture request timed out 🚨  ")
+        logging.error("🚨 Images capture request timed out 🚨  ")
         return
     except:
-        logging.info("🚨 Images capture request timed out 🚨  ")
+        logging.exception("🚨 Images capture request timed out 🚨  ")
         return        
     callsign = currentPlane["callsign"]
     if len(callsign) <= 0:
@@ -127,15 +127,16 @@ def get_jpeg_request():  # 5.2.4.1
             var.write(resp.content)
 
 
-        # Create a blob client using the local file name as the name for the blob
-        blob_client = blob_service_client.get_blob_client(container="inbox", blob=filename)
+        if blob_service_client:
+            # Create a blob client using the local file name as the name for the blob
+            blob_client = blob_service_client.get_blob_client(container="inbox", blob=filename)
 
-        # Upload the created file
-        try:
-            with open(filepath, "rb") as data:
-                blob_client.upload_blob(data,overwrite=True)
-        except:
-            logging.error(" 🚨 Exception while Uploading")
+            # Upload the created file
+            try:
+                with open(filepath, "rb") as data:
+                    blob_client.upload_blob(data,overwrite=True)
+            except:
+                logging.exception(" 🚨 Exception while Uploading")
 
 
         #Non-Blocking
@@ -155,7 +156,7 @@ def get_jpeg_request():  # 5.2.4.1
     net_time_diff = (disk_time - start_time)
     disk_time_diff = (end_time - disk_time)
     if disk_time_diff.total_seconds() > 0.1:
-        logging.info("🚨  Image Capture Timeout  🚨  Net time: {}  \tDisk time: {}".format(net_time_diff, disk_time_diff))
+        logging.warning("🚨  Image Capture Timeout  🚨  Net time: {}  \tDisk time: {}".format(net_time_diff, disk_time_diff))
 
 
 
@@ -196,7 +197,7 @@ def moveCamera(ip, username, password):
     while True:
         if active:
             if not "icao24" in currentPlane:
-                logging.info(" 🚨 Active but Current Plane is not set")
+                logging.warning(" 🚨 Active but Current Plane is not set")
                 continue
             if moveTimeout <= datetime.now():
                 calculateCameraPosition()
@@ -211,14 +212,14 @@ def moveCamera(ip, username, password):
 
                 try:
                     camera.absolute_move(pan, tilt, cameraZoom)
-                except:
-                    logging.info(" 🚨 Exception with Moving")   
+                except Exception as exc:
+                    logging.error(" 🚨 Exception with Moving: {}".format(exc))   
                   
                 #logging.info("Moving to Pan: {} Tilt: {}".format(cameraPan, cameraTilt))
                 moveTimeout = moveTimeout + timedelta(milliseconds=movePeriod)
                 if moveTimeout <= datetime.now():
                     lag = datetime.now() - moveTimeout
-                    logging.info(" 🚨 Move execution time was greater that Move Period - lag: {}".format(lag))
+                    logging.warning(" 🚨 Move execution time was greater that Move Period - lag: {}".format(lag))
                     moveTimeout = datetime.now() + timedelta(milliseconds=movePeriod)
 
             if captureTimeout <= datetime.now():
@@ -227,7 +228,7 @@ def moveCamera(ip, username, password):
                 captureTimeout = captureTimeout + timedelta(milliseconds=capturePeriod)
                 if captureTimeout <= datetime.now():
                     lag = datetime.now() - captureTimeout
-                    logging.info(" 🚨 Capture execution time was greater that Capture Period - lag: {}".format(lag))
+                    logging.warning(" 🚨 Capture execution time was greater that Capture Period - lag: {}".format(lag))
                     captureTimeout = datetime.now() + timedelta(milliseconds=capturePeriod)
             time.sleep(0.005)
         else:
@@ -405,8 +406,9 @@ def main():
     camera_altitude = args.alt # Altitude is in METERS
     camera_lead = args.camera_lead
     
-    # Create the BlobServiceClient object which will be used to create a container client
-    blob_service_client = BlobServiceClient.from_connection_string(args.conn)
+    if args.conn: 
+        # Create the BlobServiceClient object which will be used to create a container client
+        blob_service_client = BlobServiceClient.from_connection_string(args.conn)
 
     threading.Thread(target=moveCamera, args=[args.axis_ip, args.axis_username, args.axis_password],daemon=True).start()
         # Sleep for a bit so we're not hammering the HAT with updates
